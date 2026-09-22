@@ -1,0 +1,21 @@
+text,label
+"Hi John, our project meeting is scheduled for tomorrow at 10 AM.",Safe
+"Please find the attached report for today's meeting.",Safe
+"Your Amazon order has been shipped. Thank you for shopping with us.",Safe
+"Can we schedule a meeting for tomorrow afternoon?",Safe
+"Your monthly statement is ready in your online account.",Safe
+"Thank you for your payment. Your receipt is attached.",Safe
+"URGENT! Your bank account has been suspended. Click http://secure-login-example.com immediately to verify your password.",Phishing
+"Congratulations! You won a free iPhone. Claim your prize now at http://free-prize-example.com",Phishing
+"Your PayPal account is locked. Login now to restore access.",Phishing
+"Verify your password immediately or your account will be deleted.",Phishing
+"URGENT! You have won a cash prize. Click the link and confirm your account.",Phishing
+"Your bank security alert requires immediate login and password verification.",Phishing
+"Click here to claim your reward before it expires: http://reward-example.com",Phishing
+"Your account has been compromised. Confirm your details immediately.",Phishing
+"Free gift waiting for you! Verify your account to receive your prize.",Phishing
+"Meeting tomorrow at 10 AM. Please bring the project report.",Safe
+"Your electricity bill payment was successful. Thank you.",Safe
+"Here is the presentation from today's class.",Safe
+"Please review the document and send your feedback.",Safe
+"Your appointment is confirmed for Friday morning.",Safe
