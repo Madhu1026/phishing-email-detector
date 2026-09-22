@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phishing Email Detection</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">
+            <div class="shield">🛡️</div>
+            <div>
+                <h1>Phishing Email Detection</h1>
+                <p>Machine Learning Security Analyzer</p>
+            </div>
+        </div>
+        <span class="status">● Python Backend Online</span>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <div>
+                <span class="badge">SCIKIT-LEARN + PYTHON</span>
+                <h2>Detect suspicious emails instantly.</h2>
+                <p>Paste an email below. The backend analyzes its text, links and suspicious keywords.</p>
+            </div>
+        </section>
+
+        <section class="grid">
+            <div class="card input-card">
+                <div class="card-title">
+                    <h3>📧 Email Analyzer</h3>
+                    <button id="sampleBtn" class="secondary">Load Sample</button>
+                </div>
+
+                <textarea id="emailInput" placeholder="Paste email content here..."></textarea>
+
+                <button id="analyzeBtn" class="primary">🔍 Analyze Email</button>
+                <div id="error" class="error hidden"></div>
+            </div>
+
+            <div class="card result-card">
+                <h3>Detection Result</h3>
+                <div id="resultBox" class="result neutral">
+                    <div class="result-icon">?</div>
+                    <div>
+                        <strong id="resultLabel">Waiting for email</strong>
+                        <p id="resultConfidence">Enter an email and click Analyze.</p>
+                    </div>
+                </div>
+
+                <div class="stats">
+                    <div><span>Email Length</span><strong id="length">—</strong></div>
+                    <div><span>URLs</span><strong id="urls">—</strong></div>
+                    <div><span>Keywords</span><strong id="keywords">—</strong></div>
+                    <div><span>!</span><strong id="exclamation">—</strong></div>
+                </div>
+
+                <div id="details" class="details"></div>
+            </div>
+        </section>
+
+        <section class="card metrics-card">
+            <div class="card-title">
+                <h3>📊 Model Performance</h3>
+                <button id="refreshMetrics" class="secondary">Refresh</button>
+            </div>
+
+            <div class="metric-row">
+                <div class="accuracy">
+                    <span>Test Accuracy</span>
+                    <strong id="accuracy">—</strong>
+                </div>
+                <div class="matrix">
+                    <h4>Confusion Matrix</h4>
+                    <div class="matrix-grid">
+                        <div class="cell head"></div>
+                        <div class="cell head">Pred Safe</div>
+                        <div class="cell head">Pred Phishing</div>
+                        <div class="cell head">Actual Safe</div>
+                        <div class="cell" id="cm00">—</div>
+                        <div class="cell" id="cm01">—</div>
+                        <div class="cell head">Actual Phishing</div>
+                        <div class="cell" id="cm10">—</div>
+                        <div class="cell" id="cm11">—</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        Phishing Email Detection • Flask API • Scikit-learn
+    </footer>
+
+<script>
+const input = document.getElementById("emailInput");
+const analyzeBtn = document.getElementById("analyzeBtn");
+
+document.getElementById("sampleBtn").onclick = () => {
+    input.value = `URGENT! Your bank account has been suspended.
+
+Click http://secure-login-example.com immediately to verify your password.
+Your account will be permanently closed if you do not confirm now.`;
+};
+
+analyzeBtn.onclick = async () => {
+    const email = input.value.trim();
+    const error = document.getElementById("error");
+    error.classList.add("hidden");
+
+    if (!email) {
+        error.textContent = "Please enter an email.";
+        error.classList.remove("hidden");
+        return;
+    }
+
+    analyzeBtn.disabled = true;
+    analyzeBtn.textContent = "Analyzing...";
+
+    try {
+        const response = await fetch("/api/predict", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({email})
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Prediction failed.");
+
+        const box = document.getElementById("resultBox");
+        box.className = "result " + (data.label === "Phishing" ? "danger" : "safe");
+        document.querySelector(".result-icon").textContent = data.label === "Phishing" ? "!" : "✓";
+        document.getElementById("resultLabel").textContent = data.label === "Phishing" ? "PHISHING EMAIL" : "SAFE EMAIL";
+        document.getElementById("resultConfidence").textContent = `Confidence: ${data.confidence}%`;
+
+        document.getElementById("length").textContent = data.email_length;
+        document.getElementById("urls").textContent = data.url_count;
+        document.getElementById("keywords").textContent = data.keyword_count;
+        document.getElementById("exclamation").textContent = data.exclamation_count;
+
+        const details = document.getElementById("details");
+        details.innerHTML = "";
+
+        if (data.urls.length) {
+            details.innerHTML += `<h4>Detected URLs</h4><ul>${data.urls.map(u => `<li>${escapeHtml(u)}</li>`).join("")}</ul>`;
+        }
+        if (data.keywords.length) {
+            details.innerHTML += `<h4>Suspicious Keywords</h4><p>${data.keywords.map(escapeHtml).join(", ")}</p>`;
+        }
+    } catch (e) {
+        error.textContent = e.message;
+        error.classList.remove("hidden");
+    } finally {
+        analyzeBtn.disabled = false;
+        analyzeBtn.textContent = "🔍 Analyze Email";
+    }
+};
+
+async function loadMetrics() {
+    try {
+        const response = await fetch("/api/metrics");
+        const data = await response.json();
+        document.getElementById("accuracy").textContent = data.accuracy + "%";
+        document.getElementById("cm00").textContent = data.confusion_matrix[0][0];
+        document.getElementById("cm01").textContent = data.confusion_matrix[0][1];
+        document.getElementById("cm10").textContent = data.confusion_matrix[1][0];
+        document.getElementById("cm11").textContent = data.confusion_matrix[1][1];
+    } catch (e) {
+        document.getElementById("accuracy").textContent = "Error";
+    }
+}
+
+document.getElementById("refreshMetrics").onclick = loadMetrics;
+loadMetrics();
+
+function escapeHtml(text) {
+    return text.replace(/[&<>"']/g, c => ({
+        "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
+    }[c]));
+}
+</script>
+</body>
+</html>
